@@ -61,4 +61,4 @@ jobs:
       - name: Publish NuGet packages
         run: |
           dotnet nuget add source --username ${{env.GITHUB_USERNAME}} --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{env.GITHUB_USERNAME}}/index.json"
-          find ./build-resources/pkgs -name "*.nupkg" -exec dotnet nuget push --api-key ${{ secrets.GITHUB_TOKEN }} --source github https://nuget.pkg.github.com/${{env.GITHUB_USERNAME}}/index.json {} \;
+          find ./build-resources/pkgs -name "*.nupkg" -exec dotnet nuget push {} --api-key ${{ secrets.GITHUB_TOKEN }} --source github \;
