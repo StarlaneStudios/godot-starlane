@@ -251,8 +251,7 @@ jobs:
       # Use custom version configuration
       - name: Generate version file
         run: |
-          mv ./build-resources/version.py ./version.py
-          ls -la
+          mv -Force ./build-resources/version.py ./version.py
 
       # Move nuget.config from voxel repo to root of checkout, so msbuild can find it
       - name: Move nuget.config
