@@ -5,7 +5,7 @@ on:
 # Global Settings
 env:
   GODOT_REFERENCE: 4.0.2-stable
-  GODOT_VOXELS_REFERENCE: master
+  GODOT_VOXEL_REFERENCE: master
   SCONS_CACHE_LIMIT: 4096
   GITHUB_USERNAME: macjuul
 
@@ -27,7 +27,7 @@ jobs:
         with:
           path: modules/voxel
           repository: Zylann/godot_voxel
-          ref: ${{env.GODOT_VOXELS_REFERENCE}}
+          ref: ${{env.GODOT_VOXEL_REFERENCE}}
 
       - name: Install dependencies
         run: |
@@ -120,7 +120,7 @@ jobs:
         with:
           path: modules/voxel
           repository: Zylann/godot_voxel
-          ref: ${{env.GODOT_VOXELS_REFERENCE}}
+          ref: ${{env.GODOT_VOXEL_REFERENCE}}
 
       - name: Install dependencies
         run: |
@@ -219,7 +219,7 @@ jobs:
         with:
           path: modules/voxel
           repository: Zylann/godot_voxel
-          ref: ${{env.GODOT_VOXELS_REFERENCE}}
+          ref: ${{env.GODOT_VOXEL_REFERENCE}}
 
       # Move nuget.config from voxel repo to root of checkout, so msbuild can find it
       - name: Move nuget.config
@@ -311,7 +311,7 @@ jobs:
         with:
           path: modules/voxel
           repository: Zylann/godot_voxel
-          ref: ${{env.GODOT_VOXELS_REFERENCE}}
+          ref: ${{env.GODOT_VOXEL_REFERENCE}}
       
       # Clone this repository containing resources
       - uses: actions/checkout@v2
