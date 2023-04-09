@@ -29,6 +29,17 @@ jobs:
           repository: Zylann/godot_voxel
           ref: ${{env.GODOT_VOXEL_REFERENCE}}
 
+      # Clone this repository containing resources
+      - uses: actions/checkout@v2
+        with:
+          path: build-resources
+      
+      # Use custom version configuration
+      - name: Generate version file
+        run: |
+          mv ./build-resources/version.py ./version.py
+          ls -la
+
       - name: Install dependencies
         run: |
           sudo add-apt-repository ppa:kisak/kisak-mesa
@@ -121,6 +132,17 @@ jobs:
           path: modules/voxel
           repository: Zylann/godot_voxel
           ref: ${{env.GODOT_VOXEL_REFERENCE}}
+
+      # Clone this repository containing resources
+      - uses: actions/checkout@v2
+        with:
+          path: build-resources
+      
+      # Use custom version configuration
+      - name: Generate version file
+        run: |
+          mv ./build-resources/version.py ./version.py
+          ls -la
 
       - name: Install dependencies
         run: |
@@ -221,6 +243,17 @@ jobs:
           repository: Zylann/godot_voxel
           ref: ${{env.GODOT_VOXEL_REFERENCE}}
 
+      # Clone this repository containing resources
+      - uses: actions/checkout@v2
+        with:
+          path: build-resources
+      
+      # Use custom version configuration
+      - name: Generate version file
+        run: |
+          mv ./build-resources/version.py ./version.py
+          ls -la
+
       # Move nuget.config from voxel repo to root of checkout, so msbuild can find it
       - name: Move nuget.config
         run: mv modules/voxel/nuget.config ./nuget.config
@@ -312,14 +345,15 @@ jobs:
           path: modules/voxel
           repository: Zylann/godot_voxel
           ref: ${{env.GODOT_VOXEL_REFERENCE}}
-      
+
       # Clone this repository containing resources
       - uses: actions/checkout@v2
         with:
           path: build-resources
       
       # Use custom version configuration
-      - run: |
+      - name: Generate version file
+        run: |
           mv ./build-resources/version.py ./version.py
           ls -la
 
