@@ -353,7 +353,6 @@ jobs:
       - name: Build the managed libraries
         run: |
           ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin
-          rm -rf ./bin/GodotSharp/Tools/nupkgs/*.snupkg
       
       # Install the .NET SDK indicated in the global.json file
       - name: Setup .NET

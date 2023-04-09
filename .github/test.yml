@@ -1,0 +1,64 @@
+name: Nuget Test
+on:
+  workflow_dispatch:
+
+# Global Cache Settings
+env:
+  GODOT_BASE_BRANCH: master
+  SCONS_CACHE_LIMIT: 4096
+  GITHUB_USERNAME: macjuul
+
+jobs:
+
+  nuget-publish:
+    runs-on: "ubuntu-20.04"
+    name: Publish NuGet packages
+    
+    env:
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+      DOTNET_NOLOGO: true
+
+    steps:
+     
+      # Clone this repository containing resources
+      - uses: actions/checkout@v2
+        with:
+          path: build-resources
+      
+      - name: Install dependencies
+        run: |
+          sudo add-apt-repository ppa:kisak/kisak-mesa
+          sudo apt-get update
+      
+      # Install all packages (except scons)
+      - name: Configure dependencies
+        run: |
+          sudo apt-get install build-essential pkg-config libx11-dev libxcursor-dev \
+            libxinerama-dev libgl1-mesa-dev libglu-dev libasound2-dev libpulse-dev libudev-dev libxi-dev libxrandr-dev yasm
+
+      # Use python 3.x release (works cross platform; best to keep self contained in it's own step)
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v2
+        with:
+          # Semantic version range syntax or exact version of a Python version
+          python-version: '3.x'
+          # Optional - x64 or x86 architecture, defaults to x64
+          architecture: 'x64'
+
+      # Setup scons, print python version and scons version info, so if anything is broken it won't run the build.
+      - name: Configuring Python packages
+        run: |
+          python -c "import sys; print(sys.version)"
+          python -m pip install scons
+          python --version
+          scons --version
+
+      # Install the .NET SDK indicated in the global.json file
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+
+      # Add the source and push the packages
+      - name: Publish NuGet packages
+        run: |
+          dotnet nuget add source --username ${{env.GITHUB_USERNAME}} --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{env.GITHUB_USERNAME}}/index.json"
+          find ./build-resources/pkgs -name "*.nupkg" -exec dotnet nuget push --api-key ${{ secrets.GITHUB_TOKEN }} --source github https://nuget.pkg.github.com/${{env.GITHUB_USERNAME}}/index.json {} \;
