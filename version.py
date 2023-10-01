@@ -1,8 +1,8 @@
 short_name = "godot"
 name = "Godot Engine (Starlane Studios)"
 major = 4
-minor = 0
-patch = 2
+minor = 1
+patch = 1
 status = "starlane"
 module_config = ""
 year = 2023

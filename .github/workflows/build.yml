@@ -4,7 +4,7 @@ on:
 
 # Global Settings
 env:
-  GODOT_REFERENCE: 4.0.2-stable
+  GODOT_REFERENCE: 4.1.1-stable
   GODOT_VOXEL_REFERENCE: master
   SCONS_CACHE_LIMIT: 4096
   GITHUB_USERNAME: macjuul
