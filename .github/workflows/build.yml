@@ -44,7 +44,7 @@ jobs:
       # Update and install dependencies
       - name: Install dependencies
         run: |
-          sudo add-apt-repository ppa:kisak/kisak-mesa
+          sudo add-apt-repository ppa:kisak/kisak-mesa -y
           sudo apt-get update
           sudo apt-get install \
             build-essential pkg-config libx11-dev libxcursor-dev xvfb \
@@ -53,7 +53,7 @@ jobs:
 
       # Upload cache on completion and check it out now
       - name: Load .scons_cache directory
-        id: mono-glue-cache
+        id: linux-cache
         uses: actions/cache@v3
         with:
           path: ${{github.workspace}}/.scons_cache/
@@ -82,14 +82,7 @@ jobs:
       - name: Compile Godot
         env:
           SCONS_CACHE: ${{github.workspace}}/.scons_cache/
-        run: |
-          scons -j2 \
-            verbose=yes \
-            warnings=all \
-            werror=yes \
-            platform=linuxbsd \
-            target=editor \
-            module_mono_enabled=yes
+        run: scons -j2 verbose=yes warnings=all werror=yes platform=linuxbsd target=editor module_mono_enabled=yes
       
       # Generate the mono glue 
       - name: Generate Mono Glue
@@ -119,7 +112,7 @@ jobs:
 
   linux-build:
     runs-on: "ubuntu-20.04"
-    name: Linux Editor
+    name: Godot Linux
     needs: mono-glue
     
     strategy:
@@ -165,7 +158,7 @@ jobs:
       # Update and install dependencies
       - name: Install dependencies
         run: |
-          sudo add-apt-repository ppa:kisak/kisak-mesa
+          sudo add-apt-repository ppa:kisak/kisak-mesa -y
           sudo apt-get update
           sudo apt-get install \
             build-essential pkg-config libx11-dev libxcursor-dev xvfb \
@@ -174,7 +167,7 @@ jobs:
 
       # Upload cache on completion and check it out now
       - name: Load .scons_cache directory
-        id: linux-editor-mono-cache
+        id: linux-cache
         uses: actions/cache@v3
         with:
           path: ${{github.workspace}}/.scons_cache/
@@ -215,15 +208,7 @@ jobs:
       - name: Compilation
         env:
           SCONS_CACHE: ${{github.workspace}}/.scons_cache/
-        run: |
-          scons -j2 \
-            verbose=yes \
-            warnings=all \
-            werror=no \
-            platform=linuxbsd \
-            target=${{matrix.target}} \
-            module_mono_enabled=yes \
-            production=yes
+        run: scons -j2 verbose=yes warnings=all werror=no platform=linuxbsd target=${{matrix.target}} module_mono_enabled=yes production=yes
       
       # Rename executable
       - name: Rename executable
@@ -239,7 +224,7 @@ jobs:
 
   windows-build:
     runs-on: "windows-latest"
-    name: Windows Editor
+    name: Godot Windows
     needs: mono-glue
     
     strategy:
@@ -288,7 +273,7 @@ jobs:
       # Upload cache on completion and check it out now
       # Editing this is pretty dangerous for Windows since it can break and needs to be properly tested with a fresh cache.
       - name: Load .scons_cache directory
-        id: windows-editor-mono-cache
+        id: windows-cache
         uses: actions/cache@v3
         with:
           path: /.scons_cache/
@@ -330,21 +315,13 @@ jobs:
         env:
           SCONS_CACHE_MSVC_CONFIG: true
           SCONS_CACHE: /.scons_cache/
-        run: |
-          scons -j2 \
-            verbose=yes \
-            warnings=all \
-            werror=no \
-            platform=windows \
-            target=${{matrix.target}} \
-            module_mono_enabled=yes \
-            production=yes
+        run: scons -j2 verbose=yes warnings=all werror=no platform=windows target=${{matrix.target}} module_mono_enabled=yes production=yes
 
       # Rename executable
       - name: Rename executable
         run: |
-          mv ./bin/${{matrix.executable_name}}.exe ./bin/Godot.exe
-          mv ./bin/${{matrix.executable_name}}.console.exe ./bin/GodotConsole.exe
+          mv -Force ./bin/${{matrix.executable_name}}.exe ./bin/Godot.exe
+          mv -Force ./bin/${{matrix.executable_name}}.console.exe ./bin/GodotConsole.exe
 
       # Make build available
       - uses: actions/upload-artifact@v3
@@ -357,9 +334,8 @@ jobs:
 
   macos-build:
     runs-on: "macos-latest"
-    name: MacOS Editor
+    name: Godot MacOS
     needs: mono-glue
-    continue-on-error: true
     
     strategy:
       matrix:
@@ -403,7 +379,7 @@ jobs:
 
       # Upload cache on completion and check it out now
       - name: Load .scons_cache directory
-        id: linux-editor-mono-cache
+        id: macos-cache
         uses: actions/cache@v3
         with:
           path: ${{github.workspace}}/.scons_cache/
@@ -449,15 +425,7 @@ jobs:
       - name: Compilation
         env:
           SCONS_CACHE: ${{github.workspace}}/.scons_cache/
-        run: |
-          scons -j2 \
-            verbose=yes \
-            warnings=all \
-            werror=no \
-            platform=macos \
-            target=${{matrix.target}} \
-            module_mono_enabled=yes \
-            production=yes
+        run: scons -j2 verbose=yes warnings=all werror=no platform=macos target=${{matrix.target}} module_mono_enabled=yes production=yes
       
       # Rename executable
       - name: Rename executable
@@ -466,7 +434,7 @@ jobs:
       # Make build available
       - uses: actions/upload-artifact@v3
         with:
-          name: linuxbsd-${{matrix.target}}
+          name: macos-${{matrix.target}}
           path: |
             bin/GodotSharp
             bin/Godot
@@ -507,5 +475,5 @@ jobs:
             --password ${{ secrets.GITHUB_TOKEN }} \
             --store-password-in-clear-text \
             --name github \
-            "https://nuget.pkg.github.com/${{env.GITHUB_USERNAME}}/index.json" \
+            "https://nuget.pkg.github.com/${{env.GITHUB_USERNAME}}/index.json"
           find ./GodotSharp/Tools/nupkgs -name "*.nupkg" -exec dotnet nuget push {} --api-key ${{ secrets.GITHUB_TOKEN }} --source github \;

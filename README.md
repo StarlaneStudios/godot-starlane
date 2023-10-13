@@ -6,3 +6,17 @@ This repository houses the Godot builds and compiling workflows for the modified
 - Only builds .NET enabled builds
 - Includes [Godot Voxel](https://github.com/Zylann/godot_voxel) module
 - Modified branding
+
+## NuGet packages
+In order to use the NuGet packages published to GitHub, you will have to execute the following command
+
+```
+dotnet nuget add source \
+	--username YOUR_GITHUB_USERNAME \
+	--password YOUR_GITHUB_PAT \
+	--store-password-in-clear-text \
+	--name GitHub \
+	"https://nuget.pkg.github.com/macjuul/index.json"
+```
+
+Set `YOUR_GITHUB_PAT` to a personal access token generated with access to packages.
