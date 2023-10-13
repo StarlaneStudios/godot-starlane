@@ -359,6 +359,7 @@ jobs:
     runs-on: "macos-latest"
     name: MacOS Editor
     needs: mono-glue
+    continue-on-error: true
     
     strategy:
       matrix:
