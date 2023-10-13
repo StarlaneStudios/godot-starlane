@@ -342,8 +342,9 @@ jobs:
 
       # Rename executable
       - name: Rename executable
-        run: mv ./bin/${{matrix.executable_name}}.exe ./bin/Godot.exe
-        run: mv ./bin/${{matrix.executable_name}}.console.exe ./bin/GodotConsole.exe
+        run: |
+          mv ./bin/${{matrix.executable_name}}.exe ./bin/Godot.exe
+          mv ./bin/${{matrix.executable_name}}.console.exe ./bin/GodotConsole.exe
 
       # Make build available
       - uses: actions/upload-artifact@v3
