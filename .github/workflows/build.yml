@@ -326,7 +326,7 @@ jobs:
       # Make build available
       - uses: actions/upload-artifact@v3
         with:
-          name: ${{matrix.executable_name}}
+          name: windows-${{matrix.target}}
           path: |
             bin/GodotSharp
             bin/Godot.exe
