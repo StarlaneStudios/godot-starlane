@@ -1,13 +1,14 @@
 name: Godot Builds
-on:
-  workflow_dispatch:
 
 # Global Settings
 env:
-  GODOT_REFERENCE: 4.1.1-stable
+  GODOT_REFERENCE: 4.1.2-stable
   GODOT_VOXEL_REFERENCE: master
   SCONS_CACHE_LIMIT: 4096
   GITHUB_USERNAME: macjuul
+
+on:
+  workflow_dispatch:
 
 jobs:
 
@@ -17,44 +18,43 @@ jobs:
 
     steps:
       # Clone Godot
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: godotengine/godot
           ref: ${{env.GODOT_REFERENCE}}
 
       # Clone godot_voxels under the correct directory
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           path: modules/voxel
           repository: Zylann/godot_voxel
           ref: ${{env.GODOT_VOXEL_REFERENCE}}
 
       # Clone this repository containing resources
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           path: build-resources
       
       # Use custom version configuration
-      - name: Generate version file
+      - name: Overwrite version file
         run: |
           mv ./build-resources/version.py ./version.py
           ls -la
 
+      # Update and install dependencies
       - name: Install dependencies
         run: |
           sudo add-apt-repository ppa:kisak/kisak-mesa
           sudo apt-get update
-
-      # Install all packages (except scons)
-      - name: Configure dependencies
-        run: |
-          sudo apt-get install build-essential pkg-config libx11-dev libxcursor-dev xvfb \
-            libxinerama-dev libgl1-mesa-dev libglu-dev libasound2-dev libpulse-dev libudev-dev libxi-dev libxrandr-dev yasm
+          sudo apt-get install \
+            build-essential pkg-config libx11-dev libxcursor-dev xvfb \
+            libxinerama-dev libgl1-mesa-dev libglu-dev libasound2-dev libpulse-dev \
+            libudev-dev libxi-dev libxrandr-dev yasm
 
       # Upload cache on completion and check it out now
       - name: Load .scons_cache directory
         id: mono-glue-cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{github.workspace}}/.scons_cache/
           key: ${{github.job}}-${{env.GODOT_REFERENCE}}-${{github.ref}}-${{github.sha}}
@@ -65,11 +65,9 @@ jobs:
 
       # Use python 3.x release (works cross platform; best to keep self contained in it's own step)
       - name: Set up Python 3.x
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          # Semantic version range syntax or exact version of a Python version
           python-version: '3.x'
-          # Optional - x64 or x86 architecture, defaults to x64
           architecture: 'x64'
 
       # Setup scons, print python version and scons version info, so if anything is broken it won't run the build.
@@ -80,18 +78,31 @@ jobs:
           python --version
           scons --version
 
-      # We should always be explicit with our flags usage here since it's gonna be sure to always set those flags
-      - name: Compile Godot (module_mono_enabled=yes mono_glue=no)
+      # Build the mono glue version of Godot
+      - name: Compile Godot
         env:
           SCONS_CACHE: ${{github.workspace}}/.scons_cache/
         run: |
-          scons -j2 verbose=yes warnings=all werror=yes platform=linuxbsd tests=no target=editor dev_build=no debug_symbols=no module_mono_enabled=yes mono_glue=no copy_mono_root=yes
+          scons -j2 \
+            verbose=yes \
+            warnings=all \
+            werror=yes \
+            platform=linuxbsd \
+            target=editor \
+            module_mono_enabled=yes
+      
+      # Generate the mono glue 
       - name: Generate Mono Glue
         run: |
           xvfb-run ./bin/godot.linuxbsd.editor.x86_64.mono --headless --generate-mono-glue modules/mono/glue || true
 
+      # Build required assemblies
+      - name: Build the managed libraries
+        run: |
+          ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin
+
       # Make glue available as artifact for dependent jobs
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: mono-glue
           path: |
@@ -99,9 +110,16 @@ jobs:
             modules/mono/glue/GodotSharp/GodotSharp/Generated/
             modules/mono/glue/GodotSharp/GodotSharpEditor/Generated/
 
+      # Make assemblies available as artifact for dependent jobs
+      - uses: actions/upload-artifact@v3
+        with:
+          name: mono-assemblies
+          path: |
+            bin/GodotSharp
+
   linux-build:
     runs-on: "ubuntu-20.04"
-    name: Linux Editor w/ Mono
+    name: Linux Editor
     needs: mono-glue
     
     strategy:
@@ -111,54 +129,53 @@ jobs:
             target: editor
             executable_name: godot.linuxbsd.editor.x86_64.mono
             
-          - name: Debug build
+          - name: Debug templates
             target: template_debug
             executable_name: godot.linuxbsd.template_debug.x86_64.mono
 
-          - name: Release build
+          - name: Release templates
             target: template_release
             executable_name: godot.linuxbsd.template_release.x86_64.mono
 
     steps:
       # Clone Godot
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: godotengine/godot
           ref: ${{env.GODOT_REFERENCE}}
 
       # Clone godot_voxels under the correct directory
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           path: modules/voxel
           repository: Zylann/godot_voxel
           ref: ${{env.GODOT_VOXEL_REFERENCE}}
 
       # Clone this repository containing resources
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           path: build-resources
       
       # Use custom version configuration
-      - name: Generate version file
+      - name: Overwrite version file
         run: |
           mv ./build-resources/version.py ./version.py
           ls -la
 
+      # Update and install dependencies
       - name: Install dependencies
         run: |
           sudo add-apt-repository ppa:kisak/kisak-mesa
           sudo apt-get update
-
-      # Install all packages (except scons)
-      - name: Configure dependencies
-        run: |
-          sudo apt-get install build-essential pkg-config libx11-dev libxcursor-dev \
-            libxinerama-dev libgl1-mesa-dev libglu-dev libasound2-dev libpulse-dev libudev-dev libxi-dev libxrandr-dev yasm
+          sudo apt-get install \
+            build-essential pkg-config libx11-dev libxcursor-dev xvfb \
+            libxinerama-dev libgl1-mesa-dev libglu-dev libasound2-dev libpulse-dev \
+            libudev-dev libxi-dev libxrandr-dev yasm
 
       # Upload cache on completion and check it out now
       - name: Load .scons_cache directory
         id: linux-editor-mono-cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{github.workspace}}/.scons_cache/
           key: ${{github.job}}-${{env.GODOT_REFERENCE}}-${{github.ref}}-${{github.sha}}
@@ -169,11 +186,9 @@ jobs:
 
       # Use python 3.x release (works cross platform; best to keep self contained in it's own step)
       - name: Set up Python 3.x
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          # Semantic version range syntax or exact version of a Python version
           python-version: '3.x'
-          # Optional - x64 or x86 architecture, defaults to x64
           architecture: 'x64'
 
       # Setup scons, print python version and scons version info, so if anything is broken it won't run the build.
@@ -186,32 +201,45 @@ jobs:
 
       # Download glue from the mono-glue job
       - name: Download Glue
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: mono-glue
           path: modules/mono/glue
 
+      # Build required assemblies
       - name: Build the managed libraries
         run: |
-          ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin
+          ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin --godot-platform=linuxbsd
 
-      # We should always be explicit with our flags usage here since it's gonna be sure to always set those flags
+      # Build the godot executable
       - name: Compilation
         env:
           SCONS_CACHE: ${{github.workspace}}/.scons_cache/
         run: |
-          scons -j2 verbose=yes warnings=all werror=no platform=linuxbsd tests=no target=${{matrix.target}} dev_build=no module_mono_enabled=yes mono_glue=yes mono_static=yes copy_mono_root=yes
+          scons -j2 \
+            verbose=yes \
+            warnings=all \
+            werror=no \
+            platform=linuxbsd \
+            target=${{matrix.target}} \
+            module_mono_enabled=yes \
+            production=yes
+      
+      # Rename executable
+      - name: Rename executable
+        run: mv ./bin/${{matrix.executable_name}} ./bin/Godot
 
       # Make build available
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
-          name: ${{matrix.executable_name}}
-          path: bin/*
+          name: linuxbsd-${{matrix.target}}
+          path: |
+            bin/GodotSharp
+            bin/Godot
 
   windows-build:
-    # Windows 10 with latest image
     runs-on: "windows-latest"
-    name: Windows Editor w/ Mono
+    name: Windows Editor
     needs: mono-glue
     
     strategy:
@@ -221,35 +249,35 @@ jobs:
             target: editor
             executable_name: godot.windows.editor.x86_64.mono
             
-          - name: Debug build
+          - name: Debug templates
             target: template_debug
             executable_name: godot.windows.template_debug.x86_64.mono
 
-          - name: Release build
+          - name: Release templates
             target: template_release
             executable_name: godot.windows.template_release.x86_64.mono
 
     steps:
       # Clone Godot
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: godotengine/godot
           ref: ${{env.GODOT_REFERENCE}}
 
       # Clone godot_voxels under the correct directory
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           path: modules/voxel
           repository: Zylann/godot_voxel
           ref: ${{env.GODOT_VOXEL_REFERENCE}}
 
       # Clone this repository containing resources
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           path: build-resources
       
       # Use custom version configuration
-      - name: Generate version file
+      - name: Overwrite version file
         run: |
           mv -Force ./build-resources/version.py ./version.py
 
@@ -261,7 +289,7 @@ jobs:
       # Editing this is pretty dangerous for Windows since it can break and needs to be properly tested with a fresh cache.
       - name: Load .scons_cache directory
         id: windows-editor-mono-cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /.scons_cache/
           key: ${{github.job}}-${{env.GODOT_REFERENCE}}-${{github.ref}}-${{github.sha}}
@@ -272,11 +300,9 @@ jobs:
 
       # Use python 3.x release (works cross platform; best to keep self contained in it's own step)
       - name: Set up Python 3.x
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          # Semantic version range syntax or exact version of a Python version
           python-version: '3.x'
-          # Optional - x64 or x86 architecture, defaults to x64
           architecture: 'x64'
 
       # Setup scons, print python version and scons version info, so if anything is broken it won't run the build.
@@ -289,88 +315,94 @@ jobs:
 
       # Download glue from the mono-glue job
       - name: Download Glue
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: mono-glue
           path: modules/mono/glue
 
+      # Build required assemblies
       - name: Build the managed libraries
         run: |
-          python ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin
+          python ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin --godot-platform=windows
 
-      # We should always be explicit with our flags usage here since it's gonna be sure to always set those flags
+      # Build the godot executable
       - name: Compilation
         env:
           SCONS_CACHE_MSVC_CONFIG: true
           SCONS_CACHE: /.scons_cache/
         run: |
-          scons -j2 verbose=yes warnings=all werror=no platform=windows tests=no target=${{matrix.target}} dev_build=no module_mono_enabled=yes mono_glue=yes copy_mono_root=yes mono_static=yes
+          scons -j2 \
+            verbose=yes \
+            warnings=all \
+            werror=no \
+            platform=windows \
+            target=${{matrix.target}} \
+            module_mono_enabled=yes \
+            production=yes
 
-      # TODO Enhancement: Run tests? Such tests are able to run from Godot 4.0 only
-      # Execute unit tests for the editor
-      #- name: Unit Tests
-      #  run: |
-      #    ./bin/godot.windows.editor.x86_64.mono.exe --test
+      # Rename executable
+      - name: Rename executable
+        run: mv ./bin/${{matrix.executable_name}}.exe ./bin/Godot.exe
+        run: mv ./bin/${{matrix.executable_name}}.console.exe ./bin/GodotConsole.exe
 
       # Make build available
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: ${{matrix.executable_name}}
-          path: bin/*
+          path: |
+            bin/GodotSharp
+            bin/Godot.exe
+            bin/GodotConsole.exe
 
-  nuget-publish:
-    runs-on: "ubuntu-20.04"
-    name: Publish NuGet packages
-    needs:
-      - linux-build
-      - windows-build
+  macos-build:
+    runs-on: "macos-latest"
+    name: MacOS Editor
+    needs: mono-glue
     
-    env:
-      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-      DOTNET_NOLOGO: true
+    strategy:
+      matrix:
+        include:
+          - name: Editor build
+            target: editor
+            executable_name: godot.macos.editor.x86_64.mono
+            
+          - name: Debug templates
+            target: template_debug
+            executable_name: godot.macos.template_debug.x86_64.mono
 
-    permissions: write-all
+          - name: Release templates
+            target: template_release
+            executable_name: godot.macos.template_release.x86_64.mono
 
     steps:
       # Clone Godot
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: godotengine/godot
           ref: ${{env.GODOT_REFERENCE}}
 
       # Clone godot_voxels under the correct directory
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           path: modules/voxel
           repository: Zylann/godot_voxel
           ref: ${{env.GODOT_VOXEL_REFERENCE}}
 
       # Clone this repository containing resources
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           path: build-resources
       
       # Use custom version configuration
-      - name: Generate version file
+      - name: Overwrite version file
         run: |
           mv ./build-resources/version.py ./version.py
           ls -la
 
-      - name: Install dependencies
-        run: |
-          sudo add-apt-repository ppa:kisak/kisak-mesa
-          sudo apt-get update
-      
-      # Install all packages (except scons)
-      - name: Configure dependencies
-        run: |
-          sudo apt-get install build-essential pkg-config libx11-dev libxcursor-dev \
-            libxinerama-dev libgl1-mesa-dev libglu-dev libasound2-dev libpulse-dev libudev-dev libxi-dev libxrandr-dev yasm
-
       # Upload cache on completion and check it out now
       - name: Load .scons_cache directory
         id: linux-editor-mono-cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{github.workspace}}/.scons_cache/
           key: ${{github.job}}-${{env.GODOT_REFERENCE}}-${{github.ref}}-${{github.sha}}
@@ -381,11 +413,9 @@ jobs:
 
       # Use python 3.x release (works cross platform; best to keep self contained in it's own step)
       - name: Set up Python 3.x
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          # Semantic version range syntax or exact version of a Python version
           python-version: '3.x'
-          # Optional - x64 or x86 architecture, defaults to x64
           architecture: 'x64'
 
       # Setup scons, print python version and scons version info, so if anything is broken it won't run the build.
@@ -396,16 +426,66 @@ jobs:
           python --version
           scons --version
 
+      # macOS builds depend on Vulkan SDK
+      - name: Setup Vulkan SDK
+        run: |
+          sh misc/scripts/install_vulkan_sdk_macos.sh
+
       # Download glue from the mono-glue job
       - name: Download Glue
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: mono-glue
           path: modules/mono/glue
 
+      # Build required assemblies
       - name: Build the managed libraries
         run: |
-          ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin
+          ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin --godot-platform=macos
+
+      # Build the godot executable
+      - name: Compilation
+        env:
+          SCONS_CACHE: ${{github.workspace}}/.scons_cache/
+        run: |
+          scons -j2 \
+            verbose=yes \
+            warnings=all \
+            werror=no \
+            platform=macos \
+            target=${{matrix.target}} \
+            module_mono_enabled=yes \
+            production=yes
+      
+      # Rename executable
+      - name: Rename executable
+        run: mv ./bin/${{matrix.executable_name}} ./bin/Godot
+
+      # Make build available
+      - uses: actions/upload-artifact@v3
+        with:
+          name: linuxbsd-${{matrix.target}}
+          path: |
+            bin/GodotSharp
+            bin/Godot
+
+  nuget-publish:
+    runs-on: "ubuntu-20.04"
+    name: Publish NuGet packages
+    needs:
+      - mono-glue
+    
+    env:
+      # Download assemblies from the mono-glue job
+      - name: Download Glue
+        uses: actions/download-artifact@v3
+        with:
+          name: mono-assemblies
+          path: ./GodotSharp
+
+      # Debug
+      - name: Debug
+        run: ls -la
       
       # Install the .NET SDK indicated in the global.json file
       - name: Setup .NET
@@ -414,5 +494,10 @@ jobs:
       # Add the source and push the packages
       - name: Publish NuGet packages
         run: |
-          dotnet nuget add source --username ${{env.GITHUB_USERNAME}} --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{env.GITHUB_USERNAME}}/index.json"
-          find ./bin/GodotSharp/Tools/nupkgs -name "*.nupkg" -exec dotnet nuget push {} --api-key ${{ secrets.GITHUB_TOKEN }} --source github \;
+          dotnet nuget add source \
+            --username ${{env.GITHUB_USERNAME}} \
+            --password ${{ secrets.GITHUB_TOKEN }} \
+            --store-password-in-clear-text \
+            --name github \
+            "https://nuget.pkg.github.com/${{env.GITHUB_USERNAME}}/index.json" \
+          find ./GodotSharp/Tools/nupkgs -name "*.nupkg" -exec dotnet nuget push {} --api-key ${{ secrets.GITHUB_TOKEN }} --source github \;
