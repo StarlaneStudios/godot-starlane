@@ -2,7 +2,7 @@ name: Godot Builds
 
 # Global Settings
 env:
-  GODOT_REFERENCE: 4.1.2-stable
+  GODOT_REFERENCE: a574c02
   GODOT_VOXEL_REFERENCE: master
   SCONS_CACHE_LIMIT: 4096
   GITHUB_USERNAME: macjuul
