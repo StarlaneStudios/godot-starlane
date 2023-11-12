@@ -20,3 +20,8 @@ dotnet nuget add source \
 ```
 
 Set `YOUR_GITHUB_PAT` to a personal access token generated with access to packages.
+
+## Patches
+The Starlane Studios Godot builds are modified using patches. These patches are stored in the `patches` directory. The patches are applied automatically during the build process.
+
+When adding patches, make sure the patch uses `LF` line endings and is defined in `UTF-8` encoding.

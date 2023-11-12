@@ -2,8 +2,8 @@ name: Godot Builds
 
 # Global Settings
 env:
-  GODOT_REFERENCE: master/fc79201
-  GODOT_VOXEL_REFERENCE: master/4d06b0e
+  GODOT_REFERENCE: fc79201851a16215f9554884aa242ed957801b10
+  GODOT_VOXEL_REFERENCE: 4d06b0e497ab420c68d42834ae021e5b7dc1c790
   SCONS_CACHE_LIMIT: 4096
   GITHUB_USERNAME: macjuul
 
@@ -80,7 +80,9 @@ jobs:
 
       # Apply Starlane patches
       - name: Apply Patches
-        run: git apply --whitespace=nowarn ./build-resources/patches/*.patch
+        run: |
+          ls ./build-resources/patches
+          git apply --whitespace=nowarn ./build-resources/patches/*.patch
 
       # Build the mono glue version of Godot
       - name: Compile Godot
