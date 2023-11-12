@@ -2,8 +2,8 @@ name: Godot Builds
 
 # Global Settings
 env:
-  GODOT_REFERENCE: f71f4b80e32f6e98a4cd3cb1c06071223297e8fc
-  GODOT_VOXEL_REFERENCE: master
+  GODOT_REFERENCE: master/fc79201
+  GODOT_VOXEL_REFERENCE: master/4d06b0e
   SCONS_CACHE_LIMIT: 4096
   GITHUB_USERNAME: macjuul
 
@@ -77,6 +77,10 @@ jobs:
           python -m pip install scons
           python --version
           scons --version
+
+      # Apply Starlane patches
+      - name: Apply Patches
+        run: git apply --whitespace=nowarn ./build-resources/patches/*.patch
 
       # Build the mono glue version of Godot
       - name: Compile Godot
@@ -204,6 +208,10 @@ jobs:
         run: |
           ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin --godot-platform=linuxbsd
 
+      # Apply Starlane patches
+      - name: Apply Patches
+        run: git apply --whitespace=nowarn ./build-resources/patches/*.patch
+
       # Build the godot executable
       - name: Compilation
         env:
@@ -309,6 +317,11 @@ jobs:
       - name: Build the managed libraries
         run: |
           python ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin --godot-platform=windows
+
+      # Apply Starlane patches
+      - name: Apply Patches
+        shell: bash
+        run: git apply --whitespace=nowarn ./build-resources/patches/*.patch
 
       # Build the godot executable
       - name: Compilation
@@ -420,6 +433,10 @@ jobs:
       - name: Build the managed libraries
         run: |
           ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin --godot-platform=macos
+
+      # Apply Starlane patches
+      - name: Apply Patches
+        run: git apply --whitespace=nowarn ./build-resources/patches/*.patch
 
       # Build the godot executable
       - name: Compilation
