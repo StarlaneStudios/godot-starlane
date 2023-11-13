@@ -323,7 +323,10 @@ jobs:
       # Apply Starlane patches
       - name: Apply Patches
         shell: bash
-        run: git apply --whitespace=nowarn ./build-resources/patches/*.patch
+        run: |
+          pwd
+          ls ./build-resources/patches
+          git apply -v --ignore-space-change --whitespace=nowarn ./build-resources/patches/*.patch
 
       # Build the godot executable
       - name: Compilation
