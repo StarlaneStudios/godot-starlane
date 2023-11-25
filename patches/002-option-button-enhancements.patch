@@ -1,0 +1,85 @@
+diff --git a/scene/gui/option_button.cpp b/scene/gui/option_button.cpp
+index f9740b1217..b6791b78a9 100644
+--- a/scene/gui/option_button.cpp
++++ b/scene/gui/option_button.cpp
+@@ -500,7 +500,7 @@ void OptionButton::show_popup() {
+ 	}
+ 
+ 	Rect2 rect = get_screen_rect();
+-	rect.position.y += rect.size.height;
++	rect.position.y += rect.size.height + popup_offset;
+ 	rect.size.height = 0;
+ 	popup->set_position(rect.position);
+ 	popup->set_size(rect.size);
+@@ -573,12 +573,18 @@ void OptionButton::_bind_methods() {
+ 	ClassDB::bind_method(D_METHOD("set_allow_reselect", "allow"), &OptionButton::set_allow_reselect);
+ 	ClassDB::bind_method(D_METHOD("get_allow_reselect"), &OptionButton::get_allow_reselect);
+ 	ClassDB::bind_method(D_METHOD("set_disable_shortcuts", "disabled"), &OptionButton::set_disable_shortcuts);
++	ClassDB::bind_method(D_METHOD("set_transparent_background", "enabled"), &OptionButton::set_transparent_background);
++	ClassDB::bind_method(D_METHOD("has_transparent_background"), &OptionButton::has_transparent_background);
++	ClassDB::bind_method(D_METHOD("set_popup_offset", "offset"), &OptionButton::set_popup_offset);
++	ClassDB::bind_method(D_METHOD("get_popup_offset"), &OptionButton::get_popup_offset);
+ 
+ 	// "selected" property must come after "item_count", otherwise GH-10213 occurs.
+ 	ADD_ARRAY_COUNT("Items", "item_count", "set_item_count", "get_item_count", "popup/item_");
+ 	ADD_PROPERTY(PropertyInfo(Variant::INT, "selected"), "_select_int", "get_selected");
+ 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "fit_to_longest_item"), "set_fit_to_longest_item", "is_fit_to_longest_item");
+ 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "allow_reselect"), "set_allow_reselect", "get_allow_reselect");
++	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "transparent_bg"), "set_transparent_background", "has_transparent_background");
++	ADD_PROPERTY(PropertyInfo(Variant::INT, "popup_offset"), "set_popup_offset", "get_popup_offset");
+ 
+ 	ADD_SIGNAL(MethodInfo("item_selected", PropertyInfo(Variant::INT, "index")));
+ 	ADD_SIGNAL(MethodInfo("item_focused", PropertyInfo(Variant::INT, "index")));
+@@ -603,6 +609,27 @@ void OptionButton::set_disable_shortcuts(bool p_disabled) {
+ 	disable_shortcuts = p_disabled;
+ }
+ 
++void OptionButton::set_transparent_background(bool p_enable) {
++	transparent_bg = p_enable;
++	popup->set_transparent_background(p_enable);
++}
++
++bool OptionButton::has_transparent_background() const {
++	return transparent_bg;
++}
++
++void OptionButton::set_popup_offset(int p_offset) {
++	popup_offset = p_offset;
++
++	if (popup->is_visible()) {
++		show_popup();
++	}
++}
++
++int OptionButton::get_popup_offset() {
++	return popup_offset;
++}
++
+ OptionButton::OptionButton(const String &p_text) :
+ 		Button(p_text) {
+ 	set_toggle_mode(true);
+diff --git a/scene/gui/option_button.h b/scene/gui/option_button.h
+index eef498333b..0a47ddc337 100644
+--- a/scene/gui/option_button.h
++++ b/scene/gui/option_button.h
+@@ -44,6 +44,8 @@ class OptionButton : public Button {
+ 	Vector2 _cached_size;
+ 	bool cache_refresh_pending = false;
+ 	bool allow_reselect = false;
++	bool transparent_bg = false;
++	int popup_offset = 0;
+ 
+ 	struct ThemeCache {
+ 		Ref<StyleBox> normal;
+@@ -134,6 +136,11 @@ public:
+ 
+ 	void set_disable_shortcuts(bool p_disabled);
+ 
++	void set_transparent_background(bool p_enable);
++	bool has_transparent_background() const;
++	void set_popup_offset(int p_offset);
++	int get_popup_offset();
++
+ 	OptionButton(const String &p_text = String());
+ 	~OptionButton();
+ };
