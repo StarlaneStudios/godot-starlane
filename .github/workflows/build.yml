@@ -82,7 +82,7 @@ jobs:
       - name: Apply Patches
         run: |
           ls ./build-resources/patches
-          git apply --whitespace=nowarn ./build-resources/patches/*.patch
+          git apply --whitespace=fix ./build-resources/patches/*.patch
 
       # Build the mono glue version of Godot
       - name: Compile Godot
@@ -212,7 +212,7 @@ jobs:
 
       # Apply Starlane patches
       - name: Apply Patches
-        run: git apply --whitespace=nowarn ./build-resources/patches/*.patch
+        run: git apply --whitespace=fix ./build-resources/patches/*.patch
 
       # Build the godot executable
       - name: Compilation
@@ -326,7 +326,7 @@ jobs:
         run: |
           pwd
           ls ./build-resources/patches
-          git apply -v --ignore-space-change --whitespace=nowarn ./build-resources/patches/*.patch
+          git apply -v --ignore-space-change --whitespace=fix ./build-resources/patches/*.patch
 
       # Build the godot executable
       - name: Compilation
@@ -441,7 +441,7 @@ jobs:
 
       # Apply Starlane patches
       - name: Apply Patches
-        run: git apply --whitespace=nowarn ./build-resources/patches/*.patch
+        run: git apply --whitespace=fix ./build-resources/patches/*.patch
 
       # Build the godot executable
       - name: Compilation
