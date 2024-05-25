@@ -2,8 +2,8 @@ name: Godot Builds
 
 # Global Settings
 env:
-  GODOT_REFERENCE: b09f793f564a6c95dc76acc654b390e68441bd01
-  GODOT_VOXEL_REFERENCE: b3ba78ee68338bfa5c01044d15eab8459beb4cd2
+  GODOT_REFERENCE: 15073afe3856abd2aa1622492fe50026c7d63dc1
+  GODOT_VOXEL_REFERENCE: ec063a684a4b17878d4018c015c55e2d625f724c
   SCONS_CACHE_LIMIT: 4096
   GITHUB_USERNAME: macjuul
 
@@ -422,12 +422,6 @@ jobs:
           python --version
           scons --version
 
-      # macOS builds depend on Vulkan SDK
-      - name: Setup Vulkan SDK
-        run: |
-          sh misc/scripts/install_vulkan_sdk_macos.sh
-          ls -la ~/VulkanSDK/1.3.275.0
-
       # Download glue from the mono-glue job
       - name: Download Glue
         uses: actions/download-artifact@v4
@@ -444,11 +438,17 @@ jobs:
       - name: Apply Patches
         run: git apply --whitespace=fix ./build-resources/patches/*.patch
 
+      # macOS builds depend on Vulkan SDK
+      - name: Setup Vulkan SDK
+        run: |
+          sh misc/scripts/install_vulkan_sdk_macos.sh
+          ls -la ~/VulkanSDK
+
       # Build the godot executable
       - name: Compilation
         env:
           SCONS_CACHE: ${{github.workspace}}/.scons_cache/
-        run: scons -j2 verbose=yes warnings=all werror=no platform=macos target=${{matrix.target}} module_mono_enabled=yes production=yes vulkan_sdk_path="~/VulkanSDK/1.3.275.0"
+        run: scons -j2 verbose=yes warnings=all werror=no platform=macos target=${{matrix.target}} module_mono_enabled=yes production=yes
       
       # Rename executable
       - name: Rename executable
