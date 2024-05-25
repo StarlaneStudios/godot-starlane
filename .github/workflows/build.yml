@@ -360,15 +360,15 @@ jobs:
         include:
           - name: Editor build
             target: editor
-            executable_name: godot.macos.editor.x86_64.mono
+            executable_name: godot.macos.editor.arm64.mono
             
           - name: Debug templates
             target: template_debug
-            executable_name: godot.macos.template_debug.x86_64.mono
+            executable_name: godot.macos.template_debug.arm64.mono
 
           - name: Release templates
             target: template_release
-            executable_name: godot.macos.template_release.x86_64.mono
+            executable_name: godot.macos.template_release.arm64.mono
 
     steps:
       # Clone Godot
