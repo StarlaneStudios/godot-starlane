@@ -462,41 +462,41 @@ jobs:
             bin/GodotSharp
             bin/Godot
 
-  nuget-publish:
-    runs-on: "ubuntu-20.04"
-    name: Publish NuGet packages
-    needs:
-      - mono-glue
+  # nuget-publish:
+  #   runs-on: "ubuntu-20.04"
+  #   name: Publish NuGet packages
+  #   needs:
+  #     - mono-glue
     
-    env:
-      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-      DOTNET_NOLOGO: true
+  #   env:
+  #     DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  #     DOTNET_NOLOGO: true
 
-    permissions: write-all
+  #   permissions: write-all
 
-    steps:
-      # Download assemblies from the mono-glue job
-      - name: Download Glue
-        uses: actions/download-artifact@v4
-        with:
-          name: mono-assemblies
-          path: ./GodotSharp
+  #   steps:
+  #     # Download assemblies from the mono-glue job
+  #     - name: Download Glue
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: mono-assemblies
+  #         path: ./GodotSharp
 
-      # Debug
-      - name: Debug
-        run: ls -la
+  #     # Debug
+  #     - name: Debug
+  #       run: ls -la
       
-      # Install the .NET SDK indicated in the global.json file
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+  #     # Install the .NET SDK indicated in the global.json file
+  #     - name: Setup .NET
+  #       uses: actions/setup-dotnet@v4
 
-      # Add the source and push the packages
-      - name: Publish NuGet packages
-        run: |
-          dotnet nuget add source \
-            --username ${{env.GITHUB_USERNAME}} \
-            --password ${{ secrets.GITHUB_TOKEN }} \
-            --store-password-in-clear-text \
-            --name github \
-            "https://nuget.pkg.github.com/${{env.GITHUB_USERNAME}}/index.json"
-          find ./GodotSharp/Tools/nupkgs -name "*.nupkg" -exec dotnet nuget push {} --api-key ${{ secrets.GITHUB_TOKEN }} --source github \;
+  #     # Add the source and push the packages
+  #     - name: Publish NuGet packages
+  #       run: |
+  #         dotnet nuget add source \
+  #           --username ${{env.GITHUB_USERNAME}} \
+  #           --password ${{ secrets.GITHUB_TOKEN }} \
+  #           --store-password-in-clear-text \
+  #           --name github \
+  #           "https://nuget.pkg.github.com/${{env.GITHUB_USERNAME}}/index.json"
+  #         find ./GodotSharp/Tools/nupkgs -name "*.nupkg" -exec dotnet nuget push {} --api-key ${{ secrets.GITHUB_TOKEN }} --source github \;
